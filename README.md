@@ -930,6 +930,22 @@ Assuming the `Measurement` node with `Type` `AC_Power` is the power your inverte
 
 **Note:** These values are not needed. They are just used to show additional information.
 
+#### Correction Factors
+The correction factor is used to *multiply* the input value so that the results correspond with what TeslaSolarCharger expects.
+
+|Input|Expected Value|
+|-----|--------------|
+|Inverter Power|A measurement of solar power generated as a positive number in Watts (W)|
+|Grid Power| A measurement of grid power export/ import in Watts (W). A export to the grid should be positive and an import from the grid should be negative.|
+|Home Battery Power|A measurement of home battery power charge/ discharge in Watts (W). If the battery is charging, this should be positive and if it is discharging this should be negative.|
+|Home Battery SoC|A measurement of the percentage charge of your home battery from 0-100%|
+
+You can use the correction factors to scale/ correct these values as appropriate. For example:
+
+- Grid Power input expresses a positive integer as an import and a negative as an export: Select negative for the operator and 1 for the correction factor (this multiplies by -1).
+- Inverter Power is expressed as kW instead of W: Select positive for the operator and 1000 for the correction factor (this multiplies by 1000).
+- Home Battery expresses its state of charge as an absolute value in kWh: Select positive for the operator and a correction factor of  1/(Full Charge Capacity) e.g. if the battery has a full charge capacity of 100kWh the correction factor is 1/100 or 0.01
+
 #### Install and setup BLE API
 To go around Teslas API limitations, you can use Bluetooth (BLE) to control your car. You can do this either by using the same device as your TSC is running on, or by using a separate device. Note: The device needs to be placed near the car.
 
@@ -1213,9 +1229,12 @@ If you get an error like `Error: No such container:` you can look up the contain
 docker ps
 ```
 
-
-As the new Tesla Fleet API requires a domain and external Token creation from version 2.23.0 onwards, TSC transfers some data to the owner of this repository. By using this software, you accept the transfer of this data. As this is open source, you can see which data is transferred. For now (6th December 2023), the following data is transferred:
+## Privacy notes
+As the new Tesla Fleet API requires a domain and external Token creation from version 2.23.0 onwards, TSC transfers some data to the owner of this repository. By using this software, you accept the transfer of this data. As this is open source, you can see which data is transferred. For now (4th July 2024), the following data is transferred:
 - Your access code is used to get the access token from Tesla (Note: the token itself is only stored locally in your TSC installation. It is only transferred via my server, but the token only exists in memory on the server itself. It is not stored in a database or log file)
 - Your installation ID (GUID) is at the bottom of the page. Do not post this GUID in public forums, as it is used to deliver the Tesla access token to your installation. Note: There is only a five-minute time window between requesting and providing the token using the installation ID. After these 5 minutes, all requests are blocked.)
 - Your installed version.
 - Error and warning logs
+- Your VIN and if using the Fleet API the data for each request (e.g. change-charging-amp to 7A)
+- A statistic of your Fleet API and BLE API usage (e.g. changed car amps 58 times including Timestamps of the request)
+- Your configuration regarding using BLE API, the configured Fleet API Refresh Interval, if getting Data from TeslaMate is enabled

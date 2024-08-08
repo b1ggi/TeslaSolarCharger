@@ -60,11 +60,12 @@ public class TscOnlyChargingCostService(ILogger<TscOnlyChargingCostService> logg
     public async Task UpdateChargePricesOfAllChargingProcesses()
     {
         logger.LogTrace("{method}()", nameof(UpdateChargePricesOfAllChargingProcesses));
-        var openChargingProcesses = await context.ChargingProcesses
+        var finalizedChargingProcesses = await context.ChargingProcesses
             .Where(cp => cp.EndDate != null)
             .ToListAsync().ConfigureAwait(false);
-        foreach (var chargingProcess in openChargingProcesses)
+        foreach (var chargingProcess in finalizedChargingProcesses)
         {
+            settings.ChargePricesUpdateText = $"Updating charging processes {finalizedChargingProcesses.IndexOf(chargingProcess)}/{finalizedChargingProcesses.Count}";
             try
             {
                 await FinalizeChargingProcess(chargingProcess);
@@ -74,6 +75,8 @@ public class TscOnlyChargingCostService(ILogger<TscOnlyChargingCostService> logg
                 logger.LogError(ex, "Error while updating charge prices of charging process with ID {chargingProcessId}.", chargingProcess.Id);
             }
         }
+
+        settings.ChargePricesUpdateText = null;
     }
 
     public async Task<Dictionary<int, DtoChargeSummary>> GetChargeSummaries()
@@ -158,7 +161,7 @@ public class TscOnlyChargingCostService(ILogger<TscOnlyChargingCostService> logg
         decimal usedGridEnergyWh = 0;
         decimal cost = 0;
         chargingProcess.EndDate = chargingDetails.Last().TimeStamp;
-        var prices = await GetPricesInTimeSpan(chargingProcess.StartDate, chargingProcess.EndDate.Value);        //When a charging process is stopped and resumed later, the last charging detail is too old and should not be used because it would use the last value dring the whole time althoug the car was not charging
+        var prices = await GetPricesInTimeSpan(chargingDetails.First().TimeStamp, chargingProcess.EndDate.Value);        //When a charging process is stopped and resumed later, the last charging detail is too old and should not be used because it would use the last value dring the whole time althoug the car was not charging
         var maxChargingDetailsDuration = TimeSpan.FromSeconds(constants.ChargingDetailsAddTriggerEveryXSeconds).Add(TimeSpan.FromSeconds(10));
         for (var index = 1; index < chargingDetails.Count; index++)
         {
